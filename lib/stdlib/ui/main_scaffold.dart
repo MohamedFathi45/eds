@@ -1,7 +1,7 @@
 
+import 'package:eds/stdlib/ui/colors.dart';
 import 'package:flutter/material.dart';
-import 'package:flutterblog/features/draft/persentation/draft_sheet.dart';
-import 'package:flutterblog/stdlib/ui/colors.dart';
+import 'package:eds/stdlib/ui/colors.dart';
 
 class MainScaffold extends StatefulWidget {
   final Widget body;
@@ -38,10 +38,10 @@ class _MainScaffoldState extends State<MainScaffold> {
              padding: EdgeInsets.all(16.0),
              child: Builder(
                builder: (context) => GestureDetector(
-                 onTap: ( ) { _toggelBs(context);},
+                 onTap: ( ) { /*_toggelBs(context); */ },
                  child: Icon(
                    Icons.create,
-                   color: bsIsOpen ? BlogColor.primary : Colors.grey,
+                   color: bsIsOpen ? AppColor.primary : Colors.grey,
                  ),
                ),
              ),
@@ -70,7 +70,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
   }
 
-  void _toggelBs(BuildContext context){
+  /*void _toggelBs(BuildContext context){
       if(bsIsOpen){
         bsController.close();
         setState(() {
@@ -85,7 +85,5 @@ class _MainScaffoldState extends State<MainScaffold> {
         });
       }
   }
-  Widget _buildBottomSheet(BuildContext context){
-      return DraftSheet();
-  }
+   */
 }

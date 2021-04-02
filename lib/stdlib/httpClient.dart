@@ -4,65 +4,84 @@ import 'dart:io';
 
 import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:dio/dio.dart';
-import 'package:flutterblog/stdlib/config/config.dart';
-import 'package:flutterblog/stdlib/errors/failurs.dart';
-import 'package:flutterblog/stdlib/injector.dart';
+import 'package:eds/stdlib/errors/failurs.dart';
+import 'package:eds/stdlib/models/user.dart';
 
-import 'models/user.dart';
+import 'injector.dart';
+
 
 Dio _dio = Dio();
-final Config _config = sl<Config>();
 
 
+
+String restBaseUrl = "http://c39643960a13.ngrok.io/engineering_app_web_service/public/api/";
+
+
+
+// without any token
 Future<Response> makeKeylessRequest(String endpoint , {Map<String,dynamic>params}) async{
-  final String url = _createURL(endpoint);
-  String json_data = json.encode(params);
-  final Response response = await _dio.post(url,
-  data: json_data,
-  options: Options(contentType: 'application/json; charset=utf-8'));
-  return response;
+   String url = _createURL(endpoint);
+   String json_data = json.encode(params);
+   _dio.options.headers['Accept'] = 'application/json';
+   final Response response = await _dio.post(url,
+       data: json_data,
+   );
+   return response;
+
 }
 
+
+// if the user gets here this means he must have token
 Future<Response> makeKeyRequest(String endpoint , {Map<String,dynamic>params}) async{
-  if(await User.getRefreshToken() == null){
+  String _token = await sl<User>().getUserToken();
+  if(_token == null){
     throw Exception("No Api key you should never get here");
   }
   final String url = _createURL(endpoint);
   Response response;
+
+
   try{
       if(params != null){   // post request
-          response = await _dio.post(url,
-          data: params,
-          options: Options(contentType: "application/json",
-          headers: {
-            "authorization": await User.getRefreshToken(),
-          }
-          ));
+        String json_data = json.encode(params);
+        _dio.options.headers['Accept'] = 'application/json';
+         response = await _dio.post(url,
+             options: Options(
+                 headers: {
+                   "authorization": 'Bearer $_token',
+                 }
+             ),
+          data: json_data,
+        );
       }
       else{                 // get request
+        _dio.options.headers['Accept'] = 'application/json';
         response = await _dio.get(url,
-            options: Options(contentType: "application/json",
-                headers: {
-                  "authorization": await User.getRefreshToken(),
-                }
-            ));
+          options: Options(
+              headers: {
+                "authorization": 'Bearer $_token',
+              }
+          ),
+        );
       }
   }on DioError catch(e){
       if(e.response == null || e.response.statusCode != 401){   // 401 means jwt or api key expired
         rethrow;
       }
 
-      if(await refresh_api_key()){      // if we succeded refreshing then its ok
+      /*if(await refresh_api_key()){      // if we succeded refreshing then its ok
         response = await makeKeyRequest(endpoint , params: params);
       }
+       */
   }
   return response;
 }
+
+
 String _createURL(String endpoint){
   String url = endpoint;
   if(url.startsWith("/") && url.length > 1) url = url.substring(1);
-  if(!url.endsWith("/")) url ="$url/";
-  return "http://${_config.restBaseUrl}$url";
+  return "${restBaseUrl}$url";
 }
 
 Future<Failure> basicDioErrorHandler(DioError e , Map<int,String> extraErrors) async{
@@ -84,21 +103,7 @@ Future<Failure> basicDioErrorHandler(DioError e , Map<int,String> extraErrors) a
   return f;
 }
 
-Future<bool> refresh_api_key() async{
-  Response response;
-  print("Tried to refresh the key");
-  try{
-    response = await makeKeyRequest("/refresh_key.php/");
-  } on DioError catch(e , st){
-      sl<User>().signOut();
-      print(e);
-      print(st);
-      return false;
-  }
-  final Map<String , dynamic> responseMap = response.data;
-  User.setRefreshToken(responseMap["jwt"] as String);
-  return true;
-}
+
 
 Future<bool> _isConnected() async{
   final DataConnectionChecker connectionChecker = DataConnectionChecker();
@@ -107,4 +112,11 @@ Future<bool> _isConnected() async{
     return true;
   }
   return false;
+}
+
+class LoginResponse{
+  final bool activate;
+  final String message;
+
+  LoginResponse(this.activate, this.message);
 }

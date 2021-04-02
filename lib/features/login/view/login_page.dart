@@ -1,7 +1,11 @@
 import 'dart:convert';
 
+import 'package:eds/features/login/controller/login_controller.dart';
+import 'package:eds/stdlib/injector.dart';
+import 'package:eds/stdlib/models/user.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:eds/features/login/controller/laravel_login_controller.dart';
 import 'package:eds/stdlib/errors/failurs.dart';
 import 'package:eds/stdlib/httpClient.dart';
 import 'package:eds/stdlib/ui/colors.dart';
@@ -9,21 +13,32 @@ import 'package:dio/dio.dart';
 
 
 class LoginPage extends StatefulWidget {
+
   @override
   _LoginPageState createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
+
+  bool _validate = true;
   String message = "";
   Color messageColor = Colors.red;
   bool _loading = false;
   final TextEditingController _emaiController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _userNameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _emaiController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    LoginController controller;
+    controller = ModalRoute.of(context).settings.arguments as LoginController;
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -45,8 +60,7 @@ class _LoginPageState extends State<LoginPage> {
                         color: Colors.black38,
                         offset: const Offset(3, 4),
                         spreadRadius: 3,
-                        blurRadius: 3
-                    )
+                        blurRadius: 3)
                   ],
                   borderRadius: BorderRadius.all(Radius.circular(16.0))
               ),
@@ -57,20 +71,28 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Register",
-                      style: Theme.of(context).textTheme.headline1,
+                      "Log in",
+                      style: Theme.of(context).textTheme.headline4,
                     ),
                     Text(
                       message,
                       style: Theme.of(context).textTheme.bodyText1.copyWith(color: messageColor),
                     ),
-                    _buildField("Username",_userNameController ,context,secure: false ,icon:Icons.person),
-                    _buildField("Email Adress",_emaiController ,context,secure: false ,icon:Icons.email),
-                    _buildField("Phone",_phoneController ,context,secure: false ,icon:Icons.phone),
+                    _buildField("Email",_emaiController ,context,secure: false ,icon:Icons.email),
                     _buildField("password", _passwordController,context ,secure: true , icon: Icons.lock),
                     MaterialButton(
                       color: Theme.of(context).primaryColor,
-                      onPressed: (){_loginFunction();},
+                      onPressed: (){
+                        if(! _emaiController.text.isEmpty && ! _passwordController.text.isEmpty) {
+                            _validate = true;
+                            _loginFunction(controller);
+                          }
+                        else{
+                          setState(() {
+                            _validate = false;
+                          });
+                        }
+                        },
                       child: _determinInButtonWidget(),
                     ),
                   ],
@@ -83,35 +105,25 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> _loginFunction() async{
+  Future<void> _loginFunction(LoginController controller) async{
     _isLoading(true);
-    try{
-      Map<String,dynamic> body =
-      {
-        'email' : _emaiController.text,
-        'password' : _passwordController.text
-      };
+    LoginResponse response = await controller.login(_emaiController.text , _passwordController.text);
+    _isLoading(false);
+    if(response.activate){
 
-      Response response = await makeKeylessRequest("/login.php/" , params: body);
-      //handel response
-      //login(response);
-    } on DioError catch(e){
-      Failure f = await basicDioErrorHandler(e,{
-        404: "Invalid credentials",
-        503: "Access Denied",
-        401: "Invalid credentials"
-      });
+      Navigator.pop(context ,response);
+    }
+    else{
       setState(() {
-        message = f.message;
+        message = response.message;
       });
     }
-    _isLoading(false);
   }
   Widget _determinInButtonWidget(){
     if(_loading )
       return const CupertinoActivityIndicator(animating: true,);
     else
-      return Text("Log in".toUpperCase() , style: TextStyle(color: Colors.white),);
+      return Text("Log in".toUpperCase() , style: TextStyle(color: Colors.white , fontWeight: FontWeight.bold),);
   }
 
   Widget _buildField(String text ,TextEditingController controller  , BuildContext context,{bool secure = false , IconData icon}){
@@ -124,6 +136,7 @@ class _LoginPageState extends State<LoginPage> {
           decoration: InputDecoration(
             prefixIcon: Icon(icon),
             hintText: text,
+            errorText: _validate ? null :'Value Can\'t Be Empty',
           )
       ),
     );
