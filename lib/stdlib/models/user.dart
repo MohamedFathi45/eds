@@ -3,9 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class User{
-  FlutterSecureStorage storage;
+  FlutterSecureStorage storage = FlutterSecureStorage();
   String _id;
-  String _token;
   String _avatar;
   bool isLoggedIn = false;
   String _userName;
@@ -28,28 +27,26 @@ class User{
     _userName = user._userName;
     _email = user._email;
     _avatar = user._avatar;
-    _token = user._token;
   }
   void setUserFromJson(Map<String , dynamic> json){
     fromJson(json);
   }
 
   Future<String> getUserToken() async{    // must check th secure storage first
-    if(_token != null)
-      return _token;
-    return null;
+    String _token = await storage.read(key : 'token');
+    return _token;
   }
 
-  void logout(){
+  void logout() async{
     _id = null;
     isLoggedIn = false;
     _avatar = null;
     _userName = null;
     _email = null;
-    _token = null;
+     await storage.delete(key: 'token');
   }
   void storeToken({String token}) async{
-    this._token = token;
+    print(token);
     await this.storage.write(key: 'token', value: token);
   }
   bool get authenticated => isLoggedIn;
