@@ -5,11 +5,7 @@ import 'package:eds/stdlib/injector.dart';
 import 'package:eds/stdlib/models/user.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:eds/features/login/controller/laravel_login_controller.dart';
-import 'package:eds/stdlib/errors/failurs.dart';
 import 'package:eds/stdlib/httpClient.dart';
-import 'package:eds/stdlib/ui/colors.dart';
-import 'package:dio/dio.dart';
 
 
 class LoginPage extends StatefulWidget {
@@ -37,8 +33,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    LoginController controller;
-    controller = ModalRoute.of(context).settings.arguments as LoginController;
+    LoginController controller = sl<LoginController>();
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(

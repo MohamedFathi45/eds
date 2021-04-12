@@ -29,7 +29,8 @@ dependencies:
   flutter_bloc:
   data_connection_checker:
   get_it:
-  flutter_secure_storage:
+  flutter_secure_storage: ^3.3.5
+  device_info:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

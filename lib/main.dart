@@ -1,6 +1,11 @@
+import 'package:eds/features/bloc/home_bloc.dart';
+import 'package:eds/features/bloc/home_state.dart';
 import 'package:eds/stdlib/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:eds/stdlib/injector.dart' as di;
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'features/home/view/home_page.dart';
 
 void main() {
   di.setUpLocator();
@@ -19,7 +24,6 @@ class MyApp extends StatelessWidget {
       ),
       routes: routes,
       initialRoute: '/home',
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
